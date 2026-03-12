@@ -3,7 +3,6 @@ package fr.epita;
 import fr.epita.utils.CharacterCell;
 
 import java.util.ArrayList;
-import java.util.Optional;
 
 public class TerminalTextBuffer {
     private ArrayList<ArrayList<CharacterCell>> screen;
