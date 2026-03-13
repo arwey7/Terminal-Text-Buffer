@@ -2,7 +2,7 @@ package fr.epita.terminalTextBuffer;
 
 import fr.epita.terminalTextBuffer.utils.*;
 
-import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Optional;
 
 public class TerminalTextBuffer {
@@ -13,9 +13,10 @@ public class TerminalTextBuffer {
     private Cursor cursor;
 
     private final int maxScrollbackSize;
+    private CharacterCell[][] scrollback;
     private CharacterCell[][] screen;
 
-    public TerminalTextBuffer(int maxScrollbackSize, int initialWidth, int initialHeight) {
+    public TerminalTextBuffer(int maxScrollbackSize, int initialHeight, int initialWidth) {
 
         // checking parameters validity
         if (maxScrollbackSize <= 0) {
@@ -28,12 +29,14 @@ public class TerminalTextBuffer {
         // setting up the screen and the scrollback
         this.screenSize = new ScreenSize(initialWidth, initialHeight);
         this.maxScrollbackSize = maxScrollbackSize;
+
         this.screen = new CharacterCell[initialHeight][initialWidth];
+        this.scrollback = new CharacterCell[maxScrollbackSize][];
 
         // setting all the cells to empty characters
         for (int row = 0; row < initialHeight; row++) {
             for (int col = 0; col < initialWidth; col++) {
-                screen[row][col] = new CharacterCell(Optional.empty(), TerminalColor.WHITE, TerminalColor.BLACK, new ArrayList<StyleFlag>());
+                screen[row][col] = new CharacterCell(Optional.empty(), TerminalColor.WHITE, TerminalColor.BLACK, EnumSet.noneOf(StyleFlag.class));
             }
         }
 
