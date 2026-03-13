@@ -15,4 +15,15 @@ public class CharacterCell {
         this.backgroundColor = backgroundColor;
         this.styleFlags = styleFlags;
     }
+
+    public static CharacterCell empty() {
+        return new CharacterCell(Optional.empty(), TerminalColor.DEFAULT, TerminalColor.DEFAULT, EnumSet.noneOf(StyleFlag.class));
+    }
+
+    public static CharacterCell of(char c, TerminalColor foregroundColor, TerminalColor backgroundColor, EnumSet<StyleFlag> styleFlags) {
+        return new CharacterCell(Optional.of(c),
+                foregroundColor,
+                backgroundColor,
+                EnumSet.copyOf(styleFlags.isEmpty() ? EnumSet.noneOf(StyleFlag.class) : styleFlags));
+    }
 }

@@ -8,9 +8,13 @@ import java.util.EnumSet;
 import java.util.Optional;
 
 public class TerminalTextBuffer {
-    //
+    // fields storing the state
     private int screenHeight, screenWidth;
     private Cursor cursor;
+
+    // colors
+    private TerminalColor currentFgColor;
+    private TerminalColor currentBgColor;
 
     private final int maxScrollbackSize;
     private Deque<CharacterCell[]> scrollback;
