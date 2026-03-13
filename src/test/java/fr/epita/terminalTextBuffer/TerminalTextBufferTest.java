@@ -1,4 +1,4 @@
-package fr.epita;
+package fr.epita.terminalTextBuffer;
 
 import org.junit.jupiter.api.Test;
 

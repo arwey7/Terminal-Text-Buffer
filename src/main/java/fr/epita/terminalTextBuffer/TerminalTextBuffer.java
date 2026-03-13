@@ -7,10 +7,10 @@ import java.util.Optional;
 
 public class TerminalTextBuffer {
     // record classes for couples of integers
-    private record Coordinates(int row, int col) {}
+    private record ScreenSize(int row, int col) {}
 
-    private Coordinates curPosition;
-    private Coordinates screenSize;
+    private ScreenSize screenSize;
+    private Cursor cursor;
 
     private final int maxScrollbackSize;
     private CharacterCell[][] screen;
@@ -26,7 +26,7 @@ public class TerminalTextBuffer {
         }
 
         // setting up the screen and the scrollback
-        this.screenSize = new Coordinates(initialWidth, initialHeight);
+        this.screenSize = new ScreenSize(initialWidth, initialHeight);
         this.maxScrollbackSize = maxScrollbackSize;
         this.screen = new CharacterCell[initialHeight][initialWidth];
 
@@ -38,6 +38,6 @@ public class TerminalTextBuffer {
         }
 
         // setting up the cursor to the beginning of the buffer
-        this.curPosition = new Coordinates(0, 0);
+        this.cursor = new Cursor(0, 0);
     }
 }
