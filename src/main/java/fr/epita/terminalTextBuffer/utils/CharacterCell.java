@@ -13,17 +13,49 @@ public class CharacterCell {
         this.character = character;
         this.foregroundColor = foregroundColor;
         this.backgroundColor = backgroundColor;
-        this.styleFlags = styleFlags;
+        this.styleFlags = styleFlags.isEmpty() ? EnumSet.noneOf(StyleFlag.class) : EnumSet.copyOf(styleFlags);
     }
 
+    /**
+     * Factory method for creating an empty character cell
+     * @return
+     * a new empty character cell
+     */
     public static CharacterCell empty() {
         return new CharacterCell(Optional.empty(), TerminalColor.DEFAULT, TerminalColor.DEFAULT, EnumSet.noneOf(StyleFlag.class));
     }
 
-    public static CharacterCell of(char c, TerminalColor foregroundColor, TerminalColor backgroundColor, EnumSet<StyleFlag> styleFlags) {
-        return new CharacterCell(Optional.of(c),
-                foregroundColor,
-                backgroundColor,
-                EnumSet.copyOf(styleFlags.isEmpty() ? EnumSet.noneOf(StyleFlag.class) : styleFlags));
+    // --- Getters and setters ---
+
+    public Optional<Character> getCharacter() {
+        return character;
+    }
+
+    public void setCharacter(Optional<Character> character) {
+        this.character = character;
+    }
+
+    public TerminalColor getForegroundColor() {
+        return foregroundColor;
+    }
+
+    public void setForegroundColor(TerminalColor foregroundColor) {
+        this.foregroundColor = foregroundColor;
+    }
+
+    public TerminalColor getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public void setBackgroundColor(TerminalColor backgroundColor) {
+        this.backgroundColor = backgroundColor;
+    }
+
+    public EnumSet<StyleFlag> getStyleFlags() {
+        return styleFlags;
+    }
+
+    public void setStyleFlags(EnumSet<StyleFlag> styleFlags) {
+        this.styleFlags = styleFlags;
     }
 }
