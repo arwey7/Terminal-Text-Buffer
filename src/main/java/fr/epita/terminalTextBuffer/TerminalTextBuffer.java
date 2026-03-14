@@ -8,28 +8,33 @@ import java.util.EnumSet;
 import java.util.Optional;
 
 public class TerminalTextBuffer {
-    // fields storing the state
+
+    // Fields storing the state of the buffer
+
     private int screenHeight, screenWidth;
-    private Cursor cursor;
+    private CharacterCell[][] screen;
+    private int maxScrollbackSize;
+    private Deque<CharacterCell[]> scrollback;
+
+    private final Cursor cursor;
     private TerminalColor currentFgColor = TerminalColor.DEFAULT;
     private TerminalColor currentBgColor = TerminalColor.DEFAULT;
     private EnumSet<StyleFlag> currentStyles = EnumSet.noneOf(StyleFlag.class);
 
-    private final int maxScrollbackSize;
-    private Deque<CharacterCell[]> scrollback;
-    private CharacterCell[][] screen;
+    // --- Constructor ---
 
     /**
      * Creates a new terminal text buffer object.
      * @param maxScrollbackSize
      * maximum scrollback size of the terminal
      * @param initialHeight
-     * terminal
+     * configurable buffer width
      * @param initialWidth
+     * configurable buffer height
      */
     public TerminalTextBuffer(int maxScrollbackSize, int initialHeight, int initialWidth) {
 
-        // checking parameters validity
+        // Checking parameters' validity
         if (maxScrollbackSize < 0) {
             throw new IllegalArgumentException("Scrollback size must be positive");
         }
@@ -37,7 +42,7 @@ public class TerminalTextBuffer {
             throw new IllegalArgumentException("Width and height must be positive");
         }
 
-        // setting up the screen and the scrollback
+        // Setting up the screen and the scrollback
         this.screenHeight = initialHeight;
         this.screenWidth = initialWidth;
         this.maxScrollbackSize = maxScrollbackSize;
@@ -45,18 +50,18 @@ public class TerminalTextBuffer {
         this.screen = new CharacterCell[initialHeight][initialWidth];
         this.scrollback = new ArrayDeque<>(maxScrollbackSize);
 
-        // setting all the cells to empty characters
+        // Setting all the cells to empty characters
         for (int row = 0; row < initialHeight; row++) {
             for (int col = 0; col < initialWidth; col++) {
-                screen[row][col] = new CharacterCell(Optional.empty(), TerminalColor.DEFAULT, TerminalColor.DEFAULT, EnumSet.noneOf(StyleFlag.class));
+                screen[row][col] = CharacterCell.empty();
             }
         }
 
-        // setting up the cursor to the beginning of the buffer
+        // Creating the cursor and moving it to the beginning of the buffer
         this.cursor = new Cursor(0, 0, initialHeight, initialWidth);
     }
 
-    // helpers
+    // --- Helpers ---
 
     /**
      * Pushes the top screen line into scrollback. Shifts all lines up, clears the bottom line.
@@ -97,13 +102,12 @@ public class TerminalTextBuffer {
         }
     }
 
-    // -- Cursor-dependent editing --
+    // --- Cursor-dependent editing ---
 
     /**
      * Writes text stating at the cursor position. The existing content is overwritten.
      * Wraps to the next line when reaching the right edge. Scrolls if needed.
      * Moves the cursor to after the last written character.
-     *
      * @param text the string to write
      */
     public void writeText(String text) {
@@ -115,7 +119,6 @@ public class TerminalTextBuffer {
 
     /**
      * Inserts text at the cursor position. Shifts existing content to the right.
-     *
      * @param text the string to insert
      */
     public void insertText(String text) {
@@ -135,7 +138,6 @@ public class TerminalTextBuffer {
     /**
      * Fills the entire row at the cursor's current position with a given character.
      * The cursor doesn't move.
-     *
      * @param c optional character to fill the line with
      */
     public void fillLine(Optional<Character> c) {
@@ -145,7 +147,7 @@ public class TerminalTextBuffer {
         }
     }
 
-    // -- Cursor-independent editing --
+    // --- Cursor-independent editing ---
 
     /**
      * Inserts a blank line at the bottom of the screen. The top line is pushed into scrollback. All lines shift up.
