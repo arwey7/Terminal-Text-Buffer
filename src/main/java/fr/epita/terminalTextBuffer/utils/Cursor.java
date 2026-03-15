@@ -105,9 +105,9 @@ public class Cursor {
     }
 
     /**
-     * Moves the cursor dowm by a given number of cells.
+     * Moves the cursor down by a given number of cells.
      * @param delta
-     * positive integer giving the cursor dowm movement
+     * positive integer giving the cursor down movement
      */
     public void moveDown(int delta) {
         if (delta <= 0) {
@@ -138,5 +138,20 @@ public class Cursor {
             return;
         }
         moveCol(delta);
+    }
+
+    /**
+     * Updates the screen bounds the cursor is constrained to.
+     * Clamps the current position to the new bounds if needed.
+     *
+     * @param newHeight new screen height
+     * @param newWidth  new screen width
+     */
+    public void updateBounds(int newHeight, int newWidth) {
+        this.screenHeight = newHeight;
+        this.screenWidth = newWidth;
+        // clamp current position to new bounds
+        row = Math.clamp(row, 0, newHeight - 1);
+        col = Math.clamp(col, 0, newWidth - 1);
     }
 }

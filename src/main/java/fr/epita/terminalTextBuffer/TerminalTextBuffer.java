@@ -13,8 +13,8 @@ public class TerminalTextBuffer {
 
     private int screenHeight, screenWidth;
     private CharacterCell[][] screen;
-    private int maxScrollbackSize;
-    private Deque<CharacterCell[]> scrollback;
+    private final int maxScrollbackSize;
+    private final Deque<CharacterCell[]> scrollback;
 
     private final Cursor cursor;
     private TerminalColor currentFgColor = TerminalColor.DEFAULT;
@@ -416,6 +416,7 @@ public class TerminalTextBuffer {
     /**
      * Gets the entire screen content as a string.
      * Rows are separated by newlines. Empty cells become spaces.
+     *
      * @return string representation of the screen
      */
     public String getScreenAsString() {
@@ -434,6 +435,7 @@ public class TerminalTextBuffer {
     /**
      * Gets the entire scrollback + screen content as a string.
      * Oldest scrollback line first, screen last. Rows separated by newlines.
+     *
      * @return string representation of scrollback and screen combined
      */
     public String getAllAsString() {
@@ -449,4 +451,95 @@ public class TerminalTextBuffer {
         sb.append(getScreenAsString());
         return sb.toString();
     }
+
+    // --- Resize helpers ---
+
+    /**
+     * Returns a resized copy of a row.
+     * Truncates if newWidth is smaller, pads with empty cells if larger.
+     */
+    private CharacterCell[] resizeRow(CharacterCell[] row, int newWidth) {
+        CharacterCell[] newRow = new CharacterCell[newWidth];
+        int copyWidth = Math.min(row.length, newWidth);
+        System.arraycopy(row, 0, newRow, 0, copyWidth);
+        for (int col = copyWidth; col < newWidth; col++) {
+            newRow[col] = CharacterCell.empty();
+        }
+        return newRow;
+    }
+
+    /**
+     * Returns a new empty row of the given width.
+     */
+    private CharacterCell[] emptyRow(int newWidth) {
+        CharacterCell[] row = new CharacterCell[newWidth];
+        for (int col = 0; col < newWidth; col++) {
+            row[col] = CharacterCell.empty();
+        }
+        return row;
+    }
+
+    // --- Resize ---
+
+    /**
+     * Resizes the screen to the given dimensions.
+     * Width changes: rows are padded with empty cells or truncated.
+     * Height increase: empty lines are added at the bottom.
+     * Height decrease: top lines are pushed to scrollback until the screen fits.
+     * Cursor is clamped to the new bounds.
+     *
+     * @param newHeight new screen height (must be positive)
+     * @param newWidth  new screen width (must be positive)
+     */
+    public void resize(int newHeight, int newWidth) {
+        if (newHeight <= 0 || newWidth <= 0) {
+            throw new IllegalArgumentException("Height and width must be positive");
+        }
+
+        // adjust width of every screen row
+        for (int row = 0; row < screenHeight; row++) {
+            screen[row] = resizeRow(screen[row], newWidth);
+        }
+
+        // adjust width of every scrollback row
+        CharacterCell[][] scrollbackArray = scrollback.toArray(new CharacterCell[0][]);
+        scrollback.clear();
+        for (CharacterCell[] row : scrollbackArray) {
+            scrollback.addLast(resizeRow(row, newWidth));
+        }
+
+        // adjust height
+        if (newHeight > screenHeight) {
+            // grow: allocate a larger screen array, copy existing rows, fill the rest
+            CharacterCell[][] newScreen = new CharacterCell[newHeight][newWidth];
+            if (screenHeight >= 0) System.arraycopy(screen, 0, newScreen, 0, screenHeight);
+            for (int row = screenHeight; row < newHeight; row++) {
+                newScreen[row] = emptyRow(newWidth);
+            }
+            screen = newScreen;
+        } else if (newHeight < screenHeight) {
+            // push top lines to scrollback until the contents fit
+            int linesToRemove = screenHeight - newHeight;
+            for (int i = 0; i < linesToRemove; i++) {
+                if (maxScrollbackSize > 0) {
+                    if (scrollback.size() >= maxScrollbackSize) {
+                        scrollback.pollFirst(); // evict the oldest line if scrollback is full
+                    }
+                    scrollback.addLast(screen[i]);
+                }
+            }
+            // copy remaining rows into a new array
+            CharacterCell[][] newScreen = new CharacterCell[newHeight][newWidth];
+            System.arraycopy(screen, linesToRemove, newScreen, 0, newHeight);
+            screen = newScreen;
+        }
+
+        // update dimensions
+        screenHeight = newHeight;
+        screenWidth = newWidth;
+
+        // clamp cursor and update its bounds
+        cursor.updateBounds(newHeight, newWidth);
+    }
+
 }

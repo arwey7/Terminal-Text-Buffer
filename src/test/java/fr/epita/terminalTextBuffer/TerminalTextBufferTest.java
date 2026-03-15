@@ -727,3 +727,105 @@ class TerminalTextBufferContentAccessTest {
         }
     }
 }
+
+@DisplayName("TerminalTextBuffer — Resize")
+class TerminalTextBufferResizeTest {
+
+    private static final int HEIGHT = 4;
+    private static final int WIDTH = 5;
+    private static final int SCROLLBACK = 10;
+
+    private TerminalTextBuffer buf;
+
+    @BeforeEach
+    void setUp() {
+        buf = new TerminalTextBuffer(SCROLLBACK, HEIGHT, WIDTH);
+    }
+
+    @Test
+    @DisplayName("invalid dimensions throw")
+    void invalidDimensionsThrow() {
+        assertThrows(IllegalArgumentException.class, () -> buf.resize(0, WIDTH));
+        assertThrows(IllegalArgumentException.class, () -> buf.resize(HEIGHT, 0));
+        assertThrows(IllegalArgumentException.class, () -> buf.resize(-1, WIDTH));
+    }
+
+    @Test
+    @DisplayName("growing height adds empty lines at the bottom")
+    void growHeightAddsEmptyLinesAtBottom() {
+        buf.writeText("Hello");
+        buf.resize(HEIGHT + 2, WIDTH);
+        assertEquals("Hello", buf.getScreenLineAsString(0));
+        assertEquals("     ", buf.getScreenLineAsString(HEIGHT));
+        assertEquals("     ", buf.getScreenLineAsString(HEIGHT + 1));
+    }
+
+    @Test
+    @DisplayName("shrinking height pushes top lines to scrollback")
+    void shrinkHeightPushesTopToScrollback() {
+        buf.setCursor(0, 0);
+        buf.writeText("AAAAA");
+        buf.setCursor(1, 0);
+        buf.writeText("BBBBB");
+        buf.resize(HEIGHT - 1, WIDTH);
+        assertEquals(1, buf.getScrollbackSize());
+        assertEquals("AAAAA", buf.getScrollbackLineAsString(0));
+        assertEquals("BBBBB", buf.getScreenLineAsString(0));
+    }
+
+    @Test
+    @DisplayName("shrinking height with full scrollback evicts oldest scrollback line")
+    void shrinkHeightEvictsOldestWhenScrollbackFull() {
+        TerminalTextBuffer small = new TerminalTextBuffer(1, HEIGHT, WIDTH);
+        small.setCursor(0, 0);
+        small.writeText("AAAAA");
+        small.insertEmptyLine();            // AAAAA fills the 1-line scrollback
+        small.setCursor(0, 0);
+        small.writeText("BBBBB");
+        small.resize(HEIGHT - 1, WIDTH);    // BBBBB pushed to scrollback, AAAAA evicted
+        assertEquals(1, small.getScrollbackSize());
+        assertEquals("BBBBB", small.getScrollbackLineAsString(0));
+    }
+
+    @Test
+    @DisplayName("growing width pads rows with empty cells")
+    void growWidthPadsRows() {
+        buf.writeText("Hi");
+        buf.resize(HEIGHT, WIDTH + 3);
+        assertEquals("Hi      ", buf.getScreenLineAsString(0));
+    }
+
+    @Test
+    @DisplayName("shrinking width truncates row content")
+    void shrinkWidthTruncatesRows() {
+        buf.writeText("Hello");
+        buf.resize(HEIGHT, 3);
+        assertEquals("Hel", buf.getScreenLineAsString(0));
+    }
+
+    @Test
+    @DisplayName("shrinking width also truncates scrollback rows")
+    void shrinkWidthTruncatesScrollback() {
+        buf.writeText("Hello");
+        buf.insertEmptyLine();
+        buf.resize(HEIGHT, 3);
+        assertEquals("Hel", buf.getScrollbackLineAsString(0));
+    }
+
+    @Test
+    @DisplayName("cursor is clamped to new bounds after resize")
+    void cursorClampedAfterResize() {
+        buf.setCursor(HEIGHT - 1, WIDTH - 1);
+        buf.resize(2, 3);
+        assertTrue(buf.getCursorRow() < 2);
+        assertTrue(buf.getCursorCol() < 3);
+    }
+
+    @Test
+    @DisplayName("existing content is preserved after resize to same dimensions")
+    void contentPreservedOnNoOpResize() {
+        buf.writeText("Hello");
+        buf.resize(HEIGHT, WIDTH);
+        assertEquals("Hello", buf.getScreenLineAsString(0));
+    }
+}
