@@ -25,37 +25,21 @@ public class CharacterCell {
         return new CharacterCell(Optional.empty(), TerminalColor.DEFAULT, TerminalColor.DEFAULT, EnumSet.noneOf(StyleFlag.class));
     }
 
-    // --- Getters and setters ---
+    // --- Getters ---
 
     public Optional<Character> getCharacter() {
         return character;
-    }
-
-    public void setCharacter(Optional<Character> character) {
-        this.character = character;
     }
 
     public TerminalColor getForegroundColor() {
         return foregroundColor;
     }
 
-    public void setForegroundColor(TerminalColor foregroundColor) {
-        this.foregroundColor = foregroundColor;
-    }
-
     public TerminalColor getBackgroundColor() {
         return backgroundColor;
     }
 
-    public void setBackgroundColor(TerminalColor backgroundColor) {
-        this.backgroundColor = backgroundColor;
-    }
-
     public EnumSet<StyleFlag> getStyleFlags() {
         return styleFlags;
-    }
-
-    public void setStyleFlags(EnumSet<StyleFlag> styleFlags) {
-        this.styleFlags = styleFlags;
     }
 }

@@ -61,6 +61,122 @@ public class TerminalTextBuffer {
         this.cursor = new Cursor(0, 0, initialHeight, initialWidth);
     }
 
+    // --- Getters ---
+
+    /**
+     * Gets the buffer's actual number of lines saved in scrollback.
+     * @return integer corresponding to the buffer's scrollback size
+     */
+    public int getScrollbackSize() {
+        return scrollback.size();
+    }
+
+    /**
+     * Gets the current cursor row.
+     * @return integer corresponding to the row of the cursor
+     */
+    public int getCursorRow() {
+        return cursor.getRow();
+    }
+
+    /**
+     * Gets the current cursor column.
+     * @return integer corresponding to the column of the cursor
+     */
+    public int getCursorCol() {
+        return cursor.getCol();
+    }
+
+    /**
+     * Gets the cell at given coordinates.
+     * Throws and IllegalArgumentException if the coordinates are out of the buffer's bounds
+     * @param row row of the target cell
+     * @param col column of the target cell
+     * @return CharacterCell object located at screen[row][column]
+     */
+    public CharacterCell getScreenCell(int row, int col) {
+        if (row < 0 || col < 0 || row >= screenHeight || col >= screenWidth) {
+            throw new IllegalArgumentException("Row and column out of bounds");
+        }
+        return screen[row][col];
+    }
+
+    // --- Setters ---
+
+    /**
+     * Sets the buffer's background color to a given color.
+     * @param color TerminalColor object corresponding to the new buffer's color
+     */
+    public void setBackgroundColor(TerminalColor color) {
+        this.currentBgColor = color;
+    }
+
+    /**
+     * Sets the buffer's foreground color to a given color.
+     * @param color TerminalColor object corresponding to the new buffer's color
+     */
+    public void setForegroundColor(TerminalColor color) {
+        this.currentFgColor = color;
+    }
+
+    /**
+     * Sets the style flags of the buffer to those given as a parameter.
+     * @param styles EnumSet of styles containing StyleFlag objects
+     */
+    public void setStyles(EnumSet<StyleFlag> styles) {
+        this.currentStyles = styles.isEmpty() ? EnumSet.noneOf(StyleFlag.class) : EnumSet.copyOf(styles);
+    }
+
+    /**
+     * Adds a style flag to the terminal.
+     * @param style StyleFlag object to be added to the currentStyles EnumSet
+     */
+    public void addStyle(StyleFlag style) {
+        this.currentStyles.add(style);
+    }
+
+    /**
+     * Removes a style flag from the terminal.
+     * Does nothing if the given flag is not found.
+     * @param style StyleFlag object to be removed from the currentStyles EnumSet
+     */
+    public void removeStyle(StyleFlag style) {
+        this.currentStyles.remove(style);
+    }
+
+    /**
+     * Clears all the style flags from the terminal.
+     * Does nothing if the given flag is not found.
+     */
+    public void clearStyles() {
+        this.currentStyles = EnumSet.noneOf(StyleFlag.class);
+    }
+
+    /**
+     * Moves the cursor to given coordinates.
+     * Throws IllegalArgumentException if the coordinates are out of the buffer's bounds.
+     * @param row integer for the target row
+     * @param col integer for the target column
+     */
+    public void setCursor(int row, int col) {
+        if (row < 0 || col < 0 || row >= screenHeight || col >= screenWidth) {
+            throw new IllegalArgumentException("Row or column out of bounds");
+        }
+        cursor.setRow(row);
+        cursor.setCol(col);
+    }
+
+    /**
+     * Moves the cursor by the given relative coordinates.
+     * Stops moving after reaching the buffer's bounds.
+     * @param rowDelta integer for row movement (negative: up, positive: down)
+     * @param colDelta integer for column movement (negative: left, positive: right)
+     */
+    public void moveCursor(int rowDelta, int colDelta) {
+        cursor.moveRow(rowDelta);
+        cursor.moveCol(colDelta);
+    }
+
     // --- Helpers ---
 
     /**
@@ -143,7 +259,7 @@ public class TerminalTextBuffer {
     public void fillLine(Optional<Character> c) {
         int row = cursor.getRow();
         for (int col = 0; col < screenWidth; col++) {
-            screen[col][row] = c.map(character -> new CharacterCell(Optional.of(character), currentFgColor, currentBgColor, currentStyles)).orElseGet(CharacterCell::empty);
+            screen[row][col] = c.map(character -> new CharacterCell(Optional.of(character), currentFgColor, currentBgColor, currentStyles)).orElseGet(CharacterCell::empty);
         }
     }
 
