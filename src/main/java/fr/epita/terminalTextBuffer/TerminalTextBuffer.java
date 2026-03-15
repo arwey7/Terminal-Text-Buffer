@@ -436,15 +436,14 @@ public class TerminalTextBuffer {
      */
     public String getAllAsString() {
         StringBuilder sb = new StringBuilder();
-        int scrollbackSize = scrollback.size();
-
-        if (scrollbackSize > 0) {
-            for (int row = 0; row < scrollbackSize; row++) {
-                sb.append(getScrollbackLineAsString(row));
-                sb.append('\n');
+        Object[] rows = scrollback.toArray(); // single allocation
+        for (Object o : rows) {
+            CharacterCell[] line = (CharacterCell[]) o;
+            for (CharacterCell cell : line) {
+                sb.append(cell.getCharacter().orElse(' '));
             }
+            sb.append('\n');
         }
-
         sb.append(getScreenAsString());
         return sb.toString();
     }
