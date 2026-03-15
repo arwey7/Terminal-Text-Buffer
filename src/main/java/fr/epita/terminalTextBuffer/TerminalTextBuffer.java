@@ -279,7 +279,9 @@ public class TerminalTextBuffer {
     // --- Cursor-independent editing ---
 
     /**
-     * Inserts a blank line at the bottom of the screen. The top line is pushed into scrollback. All lines shift up.
+     * Inserts a blank line at the bottom of the screen.
+     * The top line is pushed into scrollback. All lines shift up.
+     * The cursor position remains unchanged.
      */
     public void insertEmptyLine() {
         scrollUp();
@@ -377,7 +379,7 @@ public class TerminalTextBuffer {
 
     /**
      * Gets a screen row as a plain string. Empty cells become spaces.
-     * Row 0 is the oldest line.
+     * Row 0 is the top of the screen.
      *
      * @param row screen row index
      * @return string representation of the row

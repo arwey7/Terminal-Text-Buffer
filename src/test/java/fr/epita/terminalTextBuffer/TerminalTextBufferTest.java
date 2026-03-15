@@ -19,9 +19,7 @@ class TerminalTextBufferEditingTest {
         buf = new TerminalTextBuffer(SCROLLBACK, HEIGHT, WIDTH);
     }
 
-    // =========================================================================
     // writeText
-    // =========================================================================
 
     @Nested
     @DisplayName("writeText")
@@ -130,9 +128,7 @@ class TerminalTextBufferEditingTest {
         }
     }
 
-    // =========================================================================
     // insertText
-    // =========================================================================
 
     @Nested
     @DisplayName("insertText")
@@ -196,9 +192,7 @@ class TerminalTextBufferEditingTest {
         }
     }
 
-    // =========================================================================
     // fillLine
-    // =========================================================================
 
     @Nested
     @DisplayName("fillLine")
@@ -269,9 +263,7 @@ class TerminalTextBufferEditingTest {
         }
     }
 
-    // =========================================================================
     // insertEmptyLine
-    // =========================================================================
 
     @Nested
     @DisplayName("insertEmptyLine")
@@ -314,9 +306,7 @@ class TerminalTextBufferEditingTest {
         }
     }
 
-    // =========================================================================
     // clearScreen
-    // =========================================================================
 
     @Nested
     @DisplayName("clearScreen")
@@ -361,9 +351,7 @@ class TerminalTextBufferEditingTest {
         }
     }
 
-    // =========================================================================
     // clearAll
-    // =========================================================================
 
     @Nested
     @DisplayName("clearAll")
@@ -397,6 +385,345 @@ class TerminalTextBufferEditingTest {
             buf.insertEmptyLine();
             buf.clearAll();
             assertEquals(0, buf.getScrollbackSize());
+        }
+    }
+}
+
+@DisplayName("TerminalTextBuffer — Content Access")
+class TerminalTextBufferContentAccessTest {
+
+    private static final int HEIGHT = 4;
+    private static final int WIDTH = 5;
+    private static final int SCROLLBACK = 10;
+
+    private TerminalTextBuffer buf;
+
+    @BeforeEach
+    void setUp() {
+        buf = new TerminalTextBuffer(SCROLLBACK, HEIGHT, WIDTH);
+    }
+
+    // getCharAt (screen)
+
+    @Nested
+    @DisplayName("getCharAt")
+    class GetCharAt {
+
+        @Test
+        @DisplayName("returns the character at a written position")
+        void returnsWrittenCharacter() {
+            buf.writeText("A");
+            assertEquals(Optional.of('A'), buf.getCharAt(0, 0));
+        }
+
+        @Test
+        @DisplayName("returns empty for an unwritten cell")
+        void returnsEmptyForUnwrittenCell() {
+            assertTrue(buf.getCharAt(0, 0).isEmpty());
+        }
+
+        @Test
+        @DisplayName("returns correct character at non-origin position")
+        void returnsCharAtNonOrigin() {
+            buf.setCursor(2, 3);
+            buf.writeText("Z");
+            assertEquals(Optional.of('Z'), buf.getCharAt(2, 3));
+        }
+
+        @Test
+        @DisplayName("negative row throws IllegalArgumentException")
+        void negativeRowThrows() {
+            assertThrows(IllegalArgumentException.class, () -> buf.getCharAt(-1, 0));
+        }
+
+        @Test
+        @DisplayName("row out of bounds throws IllegalArgumentException")
+        void rowOutOfBoundsThrows() {
+            assertThrows(IllegalArgumentException.class, () -> buf.getCharAt(HEIGHT, 0));
+        }
+
+        @Test
+        @DisplayName("col out of bounds throws IllegalArgumentException")
+        void colOutOfBoundsThrows() {
+            assertThrows(IllegalArgumentException.class, () -> buf.getCharAt(0, WIDTH));
+        }
+    }
+
+    // getScrollbackCharAt
+
+    @Nested
+    @DisplayName("getScrollbackCharAt")
+    class GetScrollbackCharAt {
+
+        @Test
+        @DisplayName("returns character from scrollback after scroll")
+        void returnsCharFromScrollback() {
+            buf.writeText("Hello");
+            buf.insertEmptyLine();
+            assertEquals(Optional.of('H'), buf.getScrollbackCharAt(0, 0));
+            assertEquals(Optional.of('e'), buf.getScrollbackCharAt(0, 1));
+        }
+
+        @Test
+        @DisplayName("row 0 is the oldest scrollback line")
+        void row0IsOldest() {
+            buf.setCursor(0, 0);
+            buf.writeText("FIRST");
+            buf.insertEmptyLine();
+            buf.setCursor(0, 0);
+            buf.writeText("SECND");
+            buf.insertEmptyLine();
+            assertEquals(Optional.of('F'), buf.getScrollbackCharAt(0, 0));
+            assertEquals(Optional.of('S'), buf.getScrollbackCharAt(1, 0));
+        }
+
+        @Test
+        @DisplayName("scrollback row out of bounds throws")
+        void scrollbackRowOutOfBoundsThrows() {
+            buf.insertEmptyLine();
+            assertThrows(IllegalArgumentException.class,
+                    () -> buf.getScrollbackCharAt(5, 0));
+        }
+
+        @Test
+        @DisplayName("scrollback col out of bounds throws")
+        void scrollbackColOutOfBoundsThrows() {
+            buf.insertEmptyLine();
+            assertThrows(IllegalArgumentException.class,
+                    () -> buf.getScrollbackCharAt(0, WIDTH));
+        }
+    }
+
+    // getAttributesAt (screen)
+    // getScrollbackAttributesAt
+
+    @Nested
+    @DisplayName("getScrollbackAttributesAt")
+    class GetScrollbackAttributesAt {
+
+        @Test
+        @DisplayName("returns correct foreground color from scrollback")
+        void returnsForegroundColorFromScrollback() {
+            buf.setForegroundColor(TerminalColor.GREEN);
+            buf.writeText("A");
+            buf.insertEmptyLine();
+            assertEquals(TerminalColor.GREEN,
+                    buf.getScrollbackAttributesAt(0, 0).getForegroundColor());
+        }
+
+        @Test
+        @DisplayName("returns correct style flags from scrollback")
+        void returnsStyleFlagsFromScrollback() {
+            buf.addStyle(StyleFlag.UNDERLINE);
+            buf.writeText("A");
+            buf.insertEmptyLine();
+            assertTrue(buf.getScrollbackAttributesAt(0, 0)
+                    .getStyleFlags().contains(StyleFlag.UNDERLINE));
+        }
+
+        @Test
+        @DisplayName("out of bounds throws")
+        void outOfBoundsThrows() {
+            buf.insertEmptyLine();
+            assertThrows(IllegalArgumentException.class,
+                    () -> buf.getScrollbackAttributesAt(0, WIDTH));
+        }
+    }
+
+    // getScreenLineAsString
+
+    @Nested
+    @DisplayName("getScreenLineAsString")
+    class GetScreenLineAsString {
+
+        @Test
+        @DisplayName("returns written text padded with spaces")
+        void returnsWrittenTextPadded() {
+            buf.writeText("Hi");
+            assertEquals("Hi   ", buf.getScreenLineAsString(0));
+        }
+
+        @Test
+        @DisplayName("empty row returns all spaces")
+        void emptyRowAllSpaces() {
+            assertEquals("     ", buf.getScreenLineAsString(0));
+        }
+
+        @Test
+        @DisplayName("returns correct row, not cursor row")
+        void returnsCorrectRow() {
+            buf.setCursor(2, 0);
+            buf.writeText("XYZ");
+            assertEquals("XYZ  ", buf.getScreenLineAsString(2));
+            assertEquals("     ", buf.getScreenLineAsString(0));
+        }
+
+        @Test
+        @DisplayName("negative row throws")
+        void negativeRowThrows() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> buf.getScreenLineAsString(-1));
+        }
+
+        @Test
+        @DisplayName("row out of bounds throws")
+        void rowOutOfBoundsThrows() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> buf.getScreenLineAsString(HEIGHT));
+        }
+
+        @Test
+        @DisplayName("returned string length equals screen width")
+        void lengthEqualsScreenWidth() {
+            buf.writeText("Hi");
+            assertEquals(WIDTH, buf.getScreenLineAsString(0).length());
+        }
+    }
+
+    // getScrollbackLineAsString
+
+    @Nested
+    @DisplayName("getScrollbackLineAsString")
+    class GetScrollbackLineAsString {
+
+        @Test
+        @DisplayName("returns content of scrollback line")
+        void returnsScrollbackContent() {
+            buf.writeText("Hello");
+            buf.insertEmptyLine();
+            assertEquals("Hello", buf.getScrollbackLineAsString(0));
+        }
+
+        @Test
+        @DisplayName("empty scrollback line returns all spaces")
+        void emptyScrollbackLineAllSpaces() {
+            buf.insertEmptyLine();
+            assertEquals("     ", buf.getScrollbackLineAsString(0));
+        }
+
+        @Test
+        @DisplayName("row 0 is oldest scrollback line")
+        void row0IsOldest() {
+            buf.setCursor(0, 0);
+            buf.writeText("AAAAA");
+            buf.insertEmptyLine();
+            buf.setCursor(0, 0);
+            buf.writeText("BBBBB");
+            buf.insertEmptyLine();
+            assertEquals("AAAAA", buf.getScrollbackLineAsString(0));
+            assertEquals("BBBBB", buf.getScrollbackLineAsString(1));
+        }
+
+        @Test
+        @DisplayName("out of bounds throws")
+        void outOfBoundsThrows() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> buf.getScrollbackLineAsString(0));
+        }
+    }
+
+    // getScreenAsString
+
+    @Nested
+    @DisplayName("getScreenAsString")
+    class GetScreenAsString {
+
+        @Test
+        @DisplayName("empty screen returns all spaces with newlines")
+        void emptyScreenAllSpaces() {
+            String expected = "     \n     \n     \n     ";
+            assertEquals(expected, buf.getScreenAsString());
+        }
+
+        @Test
+        @DisplayName("written content appears at correct position")
+        void writtenContentAtCorrectPosition() {
+            buf.writeText("Hello");
+            assertTrue(buf.getScreenAsString().startsWith("Hello"));
+        }
+
+        @Test
+        @DisplayName("rows are separated by newlines")
+        void rowsSeparatedByNewlines() {
+            String screen = buf.getScreenAsString();
+            assertEquals(HEIGHT - 1, screen.chars().filter(c -> c == '\n').count());
+        }
+
+        @Test
+        @DisplayName("no trailing newline")
+        void noTrailingNewline() {
+            assertFalse(buf.getScreenAsString().endsWith("\n"));
+        }
+
+        @Test
+        @DisplayName("content on multiple rows is preserved")
+        void multipleRowsPreserved() {
+            buf.setCursor(0, 0);
+            buf.writeText("AAAAA");
+            buf.setCursor(1, 0);
+            buf.writeText("BBBBB");
+            String[] lines = buf.getScreenAsString().split("\n");
+            assertEquals("AAAAA", lines[0]);
+            assertEquals("BBBBB", lines[1]);
+        }
+    }
+
+    // getAllAsString
+
+    @Nested
+    @DisplayName("getAllAsString")
+    class GetAllAsString {
+
+        @Test
+        @DisplayName("with no scrollback, returns same as getScreenAsString")
+        void noScrollbackMatchesScreen() {
+            buf.writeText("Hello");
+            assertEquals(buf.getScreenAsString(), buf.getAllAsString());
+        }
+
+        @Test
+        @DisplayName("scrollback lines appear before screen lines")
+        void scrollbackBeforeScreen() {
+            buf.setCursor(0, 0);
+            buf.writeText("AAAAA");
+            buf.insertEmptyLine();
+            buf.setCursor(0, 0);
+            buf.writeText("BBBBB");
+
+            String[] lines = buf.getAllAsString().split("\n");
+            assertEquals("AAAAA", lines[0]);
+            assertEquals("BBBBB", lines[1]);
+        }
+
+        @Test
+        @DisplayName("scrollback lines are separated by newlines")
+        void scrollbackLinesSeparatedByNewlines() {
+            buf.insertEmptyLine();
+            buf.insertEmptyLine();
+            long newlines = buf.getAllAsString().chars().filter(c -> c == '\n').count();
+            assertEquals(HEIGHT + 1, newlines);
+        }
+
+        @Test
+        @DisplayName("no trailing newline")
+        void noTrailingNewline() {
+            buf.insertEmptyLine();
+            assertFalse(buf.getAllAsString().endsWith("\n"));
+        }
+
+        @Test
+        @DisplayName("oldest scrollback line appears first")
+        void oldestScrollbackFirst() {
+            buf.setCursor(0, 0);
+            buf.writeText("FIRST");
+            buf.insertEmptyLine();
+            buf.setCursor(0, 0);
+            buf.writeText("SECND");
+            buf.insertEmptyLine();
+
+            String[] lines = buf.getAllAsString().split("\n");
+            assertEquals("FIRST", lines[0]);
+            assertEquals("SECND", lines[1]);
         }
     }
 }
