@@ -25,12 +25,10 @@ public class TerminalTextBuffer {
 
     /**
      * Creates a new terminal text buffer object.
-     * @param maxScrollbackSize
-     * maximum scrollback size of the terminal
-     * @param initialHeight
-     * configurable buffer width
-     * @param initialWidth
-     * configurable buffer height
+     *
+     * @param maxScrollbackSize maximum scrollback size of the terminal
+     * @param initialHeight     configurable buffer width
+     * @param initialWidth      configurable buffer height
      */
     public TerminalTextBuffer(int maxScrollbackSize, int initialHeight, int initialWidth) {
 
@@ -65,6 +63,7 @@ public class TerminalTextBuffer {
 
     /**
      * Gets the buffer's actual number of lines saved in scrollback.
+     *
      * @return integer corresponding to the buffer's scrollback size
      */
     public int getScrollbackSize() {
@@ -73,6 +72,7 @@ public class TerminalTextBuffer {
 
     /**
      * Gets the current cursor row.
+     *
      * @return integer corresponding to the row of the cursor
      */
     public int getCursorRow() {
@@ -81,6 +81,7 @@ public class TerminalTextBuffer {
 
     /**
      * Gets the current cursor column.
+     *
      * @return integer corresponding to the column of the cursor
      */
     public int getCursorCol() {
@@ -90,6 +91,7 @@ public class TerminalTextBuffer {
     /**
      * Gets the cell at given coordinates.
      * Throws and IllegalArgumentException if the coordinates are out of the buffer's bounds
+     *
      * @param row row of the target cell
      * @param col column of the target cell
      * @return CharacterCell object located at screen[row][column]
@@ -105,6 +107,7 @@ public class TerminalTextBuffer {
 
     /**
      * Sets the buffer's background color to a given color.
+     *
      * @param color TerminalColor object corresponding to the new buffer's color
      */
     public void setBackgroundColor(TerminalColor color) {
@@ -113,6 +116,7 @@ public class TerminalTextBuffer {
 
     /**
      * Sets the buffer's foreground color to a given color.
+     *
      * @param color TerminalColor object corresponding to the new buffer's color
      */
     public void setForegroundColor(TerminalColor color) {
@@ -121,6 +125,7 @@ public class TerminalTextBuffer {
 
     /**
      * Sets the style flags of the buffer to those given as a parameter.
+     *
      * @param styles EnumSet of styles containing StyleFlag objects
      */
     public void setStyles(EnumSet<StyleFlag> styles) {
@@ -129,6 +134,7 @@ public class TerminalTextBuffer {
 
     /**
      * Adds a style flag to the terminal.
+     *
      * @param style StyleFlag object to be added to the currentStyles EnumSet
      */
     public void addStyle(StyleFlag style) {
@@ -138,6 +144,7 @@ public class TerminalTextBuffer {
     /**
      * Removes a style flag from the terminal.
      * Does nothing if the given flag is not found.
+     *
      * @param style StyleFlag object to be removed from the currentStyles EnumSet
      */
     public void removeStyle(StyleFlag style) {
@@ -155,6 +162,7 @@ public class TerminalTextBuffer {
     /**
      * Moves the cursor to given coordinates.
      * Throws IllegalArgumentException if the coordinates are out of the buffer's bounds.
+     *
      * @param row integer for the target row
      * @param col integer for the target column
      */
@@ -169,6 +177,7 @@ public class TerminalTextBuffer {
     /**
      * Moves the cursor by the given relative coordinates.
      * Stops moving after reaching the buffer's bounds.
+     *
      * @param rowDelta integer for row movement (negative: up, positive: down)
      * @param colDelta integer for column movement (negative: left, positive: right)
      */
@@ -190,6 +199,7 @@ public class TerminalTextBuffer {
             }
             scrollback.addLast(screen[0].clone());
         }
+
         // shift lines up
         for (int row = 0; row < screenHeight - 1; row++) {
             screen[row] = screen[row + 1];
@@ -224,6 +234,7 @@ public class TerminalTextBuffer {
      * Writes text stating at the cursor position. The existing content is overwritten.
      * Wraps to the next line when reaching the right edge. Scrolls if needed.
      * Moves the cursor to after the last written character.
+     *
      * @param text the string to write
      */
     public void writeText(String text) {
@@ -235,6 +246,7 @@ public class TerminalTextBuffer {
 
     /**
      * Inserts text at the cursor position. Shifts existing content to the right.
+     *
      * @param text the string to insert
      */
     public void insertText(String text) {
@@ -254,6 +266,7 @@ public class TerminalTextBuffer {
     /**
      * Fills the entire row at the cursor's current position with a given character.
      * The cursor doesn't move.
+     *
      * @param c optional character to fill the line with
      */
     public void fillLine(Optional<Character> c) {
@@ -292,5 +305,147 @@ public class TerminalTextBuffer {
     public void clearAll() {
         clearScreen();
         scrollback.clear();
+    }
+
+    // --- Content access helpers ---
+
+    /**
+     * Gets a scrollback row by index. Row 0 is the oldest.
+     */
+    private CharacterCell[] getScrollbackRow(int row) {
+        if (row < 0 || row >= scrollback.size()) {
+            throw new IllegalArgumentException("Scrollback row out of bounds");
+        }
+        return (CharacterCell[]) scrollback.toArray()[row];
+    }
+
+    /**
+     * Gets a cell from the scrollback.
+     */
+    private CharacterCell getScrollbackCell(int row, int col) {
+        if (col < 0 || col >= screenWidth) {
+            throw new IllegalArgumentException("Column out of bounds");
+        }
+        return getScrollbackRow(row)[col];
+    }
+
+// --- Content access functions ---
+
+    /**
+     * Gets the character at a given position on the screen.
+     *
+     * @param row screen row index
+     * @param col screen column index
+     * @return Optional<Character> at that position
+     */
+    public Optional<Character> getCharAt(int row, int col) {
+        return getScreenCell(row, col).getCharacter();
+    }
+
+    /**
+     * Gets the character at a given position in the scrollback.
+     * Row 0 is the oldest line, row scrollbackSize-1 is the most recent.
+     *
+     * @param row scrollback row index
+     * @param col scrollback column index
+     * @return Optional<Character> at that position
+     */
+    public Optional<Character> getScrollbackCharAt(int row, int col) {
+        return getScrollbackCell(row, col).getCharacter();
+    }
+
+    /**
+     * Gets the attributes (as a CharacterCell) at a given screen position.
+     *
+     * @param row screen row index
+     * @param col screen column index
+     */
+    public CharacterCell getAttributesAt(int row, int col) {
+        return getScreenCell(row, col);
+    }
+
+    /**
+     * Gets the attributes (as a CharacterCell) at a given scrollback position.
+     *
+     * @param row scrollback row index
+     * @param col scrollback column index
+     */
+    public CharacterCell getScrollbackAttributesAt(int row, int col) {
+        return getScrollbackCell(row, col);
+    }
+
+
+    /**
+     * Gets a screen row as a plain string. Empty cells become spaces.
+     * Row 0 is the oldest line.
+     *
+     * @param row screen row index
+     * @return string representation of the row
+     */
+    public String getScreenLineAsString(int row) {
+        if (row < 0 || row >= screenHeight) {
+            throw new IllegalArgumentException("Row out of bounds");
+        }
+        StringBuilder sb = new StringBuilder(screenWidth);
+        for (int col = 0; col < screenWidth; col++) {
+            sb.append(screen[row][col].getCharacter().orElse(' '));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Gets a scrollback row as a plain string. Empty cells become spaces.
+     * Row 0 is the oldest line.
+     *
+     * @param row scrollback row index
+     * @return string representation of the row
+     */
+    public String getScrollbackLineAsString(int row) {
+        CharacterCell[] line = getScrollbackRow(row);
+        StringBuilder sb = new StringBuilder(screenWidth);
+
+        for (CharacterCell cell : line) {
+            sb.append(cell.getCharacter().orElse(' '));
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Gets the entire screen content as a string.
+     * Rows are separated by newlines. Empty cells become spaces.
+     * @return string representation of the screen
+     */
+    public String getScreenAsString() {
+        StringBuilder sb = new StringBuilder(screenHeight * (screenWidth + 1));
+
+        for (int row = 0; row < screenHeight; row++) {
+            sb.append(getScreenLineAsString(row));
+            if (row < screenHeight - 1) {
+                sb.append('\n');
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Gets the entire scrollback + screen content as a string.
+     * Oldest scrollback line first, screen last. Rows separated by newlines.
+     * @return string representation of scrollback and screen combined
+     */
+    public String getAllAsString() {
+        StringBuilder sb = new StringBuilder();
+        int scrollbackSize = scrollback.size();
+
+        if (scrollbackSize > 0) {
+            for (int row = 0; row < scrollbackSize; row++) {
+                sb.append(getScrollbackLineAsString(row));
+                sb.append('\n');
+            }
+        }
+
+        sb.append(getScreenAsString());
+        return sb.toString();
     }
 }
